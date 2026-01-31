@@ -3,75 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tveeky Messenger</title>
+    <title>Tveeky Ultra</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         :root { --bl: #3390ec; --bg: #f4f4f5; --si: #fff; --tx: #000; --mi: #fff; --mo: #eeffde; --br: #dfe1e5; }
         [data-theme="dark"] { --bg: #0f0f0f; --si: #1c1c1c; --tx: #fff; --mi: #2b2b2b; --mo: #3d6a97; --br: #333; }
-        * { box-sizing: border-box; transition: 0.1s; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; transition: 0.1s; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--tx); overflow: hidden; }
         .hidden { display: none !important; }
 
-        /* AUTH */
+        /* AUTH SCREEN */
         #auth-screen { position: fixed; inset: 0; background: #fff; z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .auth-card { width: 340px; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; background: #fff; color: #000; }
-        input, textarea { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; outline: none; background: #fff; color: #000; }
-        button { width: 100%; padding: 14px; background: var(--bl); color: #fff; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .toggle-auth { color: var(--bl); cursor: pointer; font-size: 13px; margin-top: 15px; display: block; }
+        .auth-card { width: 340px; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 15px; outline: none; }
+        button { width: 100%; padding: 14px; background: var(--bl); color: #fff; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .tgl { color: var(--bl); cursor: pointer; font-size: 13px; margin-top: 15px; display: block; }
 
         /* MAIN APP */
         #app { display: flex; height: 100vh; }
         .sidebar { width: 380px; background: var(--si); border-right: 1px solid var(--br); display: flex; flex-direction: column; }
-        .side-h { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--br); }
+        .side-h { padding: 15px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid var(--br); }
+        .side-h-top { display: flex; justify-content: space-between; align-items: center; }
+        .search-bar { position: relative; }
+        .search-bar input { padding-left: 35px; background: var(--bg); border: none; }
+        .search-bar i { position: absolute; left: 10px; top: 18px; color: #888; font-size: 20px; }
+
         .chat-list { flex: 1; overflow-y: auto; }
         .chat-item { padding: 12px 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid var(--br); }
         .chat-item:hover { background: rgba(0,0,0,0.03); }
-        .chat-item img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+        .chat-item img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #eee; }
+        .chat-info { flex: 1; overflow: hidden; }
+        .chat-info b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .chat-win { flex: 1; display: flex; flex-direction: column; background-size: cover; background-position: center; }
         .chat-h { padding: 10px 20px; background: var(--si); display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--br); }
         .chat-h img { width: 40px; height: 40px; border-radius: 50%; }
 
-        .msgs { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .msg { max-width: 70%; padding: 10px; border-radius: 15px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); font-size: 15px; }
+        .msgs { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 70%; padding: 10px; border-radius: 15px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .msg.sent { align-self: flex-end; background: var(--mo); color: #000; border-bottom-right-radius: 2px; }
         .msg.rcvd { align-self: flex-start; background: var(--mi); border-bottom-left-radius: 2px; }
         .msg img, .msg video { max-width: 100%; border-radius: 10px; margin-top: 5px; cursor: pointer; display: block; }
-        .msg-time { font-size: 10px; opacity: 0.5; text-align: right; margin-top: 4px; }
+        .msg-t { font-size: 10px; opacity: 0.5; text-align: right; margin-top: 4px; }
 
-        .input-bar { padding: 12px; background: var(--si); display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--br); }
-        .input-bar input { flex: 1; border: none; background: var(--bg); padding: 10px 15px; border-radius: 25px; color: var(--tx); outline: none; }
+        .input-bar { padding: 12px; background: var(--si); display: flex; align-items: center; gap: 12px; border-top: 1px solid var(--br); }
+        .input-bar input { flex: 1; border: none; background: var(--bg); padding: 12px 18px; border-radius: 25px; color: var(--tx); outline: none; }
 
-        /* MEDIA VIEWER */
+        /* VIEWER */
         #viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: none; justify-content: center; align-items: center; }
         .v-tools { position: absolute; top: 20px; right: 20px; color: #fff; display: flex; gap: 25px; z-index: 10001; }
-        .v-tools i { cursor: pointer; font-size: 30px; }
-        #v-content img, #v-content video { max-width: 90vw; max-height: 85vh; border-radius: 5px; }
+        #v-content img, #v-content video { max-width: 90vw; max-height: 85vh; }
 
+        /* MODALS */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 5000; display: none; justify-content: center; align-items: center; }
-        .modal-c { background: var(--si); padding: 25px; border-radius: 20px; width: 350px; max-height: 90vh; overflow-y: auto; }
+        .modal-c { background: var(--si); padding: 25px; border-radius: 20px; width: 360px; max-height: 90vh; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div id="auth-screen">
     <div class="auth-card">
-        <h2 style="color:var(--bl); margin-bottom:20px;">Tveeky</h2>
-        <div id="login-form">
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="pass" placeholder="Пароль">
-            <button onclick="login()">Войти</button>
-            <span class="toggle-auth" onclick="toggleAuth(true)">Нет аккаунта? Регистрация</span>
-        </div>
-        <div id="reg-form" class="hidden">
-            <input type="email" id="r-email" placeholder="Email">
-            <input type="password" id="r-pass" placeholder="Пароль">
-            <input type="text" id="r-nick" placeholder="Отображаемое имя">
-            <input type="text" id="r-user" placeholder="Уникальный @username">
-            <textarea id="r-bio" placeholder="О себе..."></textarea>
-            <button onclick="register()">Создать аккаунт</button>
-            <span class="toggle-auth" onclick="toggleAuth(false)">Уже есть аккаунт? Войти</span>
+        <h2 style="color:var(--bl)">Tveeky</h2>
+        <div id="auth-box">
+            <input type="text" id="a-user" placeholder="Логин (username)">
+            <input type="password" id="a-pass" placeholder="Пароль">
+            <div id="r-fields" class="hidden">
+                <input type="text" id="a-name" placeholder="Отображаемое имя">
+                <textarea id="a-bio" placeholder="О себе..."></textarea>
+            </div>
+            <button id="a-btn" onclick="handleAuth()">Войти</button>
+            <span class="tgl" id="a-tgl" onclick="tglA()">Нет аккаунта? Создать</span>
         </div>
     </div>
 </div>
@@ -79,42 +81,46 @@
 <div id="app" class="hidden">
     <div class="sidebar">
         <div class="side-h">
-            <i class="material-icons" onclick="opM('set-mod')" style="cursor:pointer">settings</i>
-            <b>Tveeky</b>
-            <i class="material-icons" onclick="opM('add-mod')" style="cursor:pointer">add</i>
+            <div class="side-h-top">
+                <i class="material-icons" onclick="opM('set-mod')" style="cursor:pointer">menu</i>
+                <b>Tveeky</b>
+                <i class="material-icons" onclick="opM('add-mod')" style="cursor:pointer">add_comment</i>
+            </div>
+            <div class="search-bar">
+                <i class="material-icons">search</i>
+                <input type="text" id="srch" placeholder="Поиск чатов..." oninput="searchChats(this.value)">
+            </div>
         </div>
         <div class="chat-list" id="chats"></div>
     </div>
+
     <div class="chat-win" id="chat-bg">
         <div id="h-ui" class="chat-h hidden">
             <img id="h-img" src="">
-            <b id="h-name"></b>
+            <div class="chat-info"><b id="h-name"></b><span id="h-stat" style="font-size:12px; opacity:0.6"></span></div>
         </div>
         <div class="msgs" id="msgs"></div>
         <div class="input-bar hidden" id="input-ui">
             <label for="f"><i class="material-icons" style="cursor:pointer;color:#888">attach_file</i></label>
-            <input type="file" id="f" hidden onchange="upMedia(this)" accept="image/*,video/*">
-            <input type="text" id="m-in" placeholder="Напишите сообщение..." onkeypress="if(event.key==='Enter') send()">
-            <i class="material-icons" style="color:var(--bl);cursor:pointer" onclick="send()">send</i>
+            <input type="file" id="f" hidden onchange="up(this)">
+            <input type="text" id="m-in" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') send()">
+            <i class="material-icons" style="color:var(--bl);cursor:pointer; font-size:30px;" onclick="send()">send</i>
         </div>
     </div>
 </div>
 
 <div id="viewer" onclick="this.style.display='none'">
-    <div class="v-tools">
-        <i class="material-icons" onclick="saveMedia(event)">download</i>
-        <i class="material-icons">close</i>
-    </div>
+    <div class="v-tools"><i class="material-icons" onclick="saveM(event)" style="cursor:pointer">download</i><i class="material-icons" style="cursor:pointer">close</i></div>
     <div id="v-content"></div>
 </div>
 
 <div id="add-mod" class="modal" onclick="clM('add-mod')">
     <div class="modal-c" onclick="event.stopPropagation()">
-        <h3>Создать</h3>
+        <h3>Создать новое</h3>
         <input type="text" id="g-na" placeholder="Название">
-        <select id="g-ty" style="width:100%; padding:10px; border-radius:10px; margin-bottom:10px;">
-            <option value="group">Группа</option>
-            <option value="channel">Канал</option>
+        <select id="g-ty" style="width:100%; padding:12px; border-radius:12px; margin-bottom:10px;">
+            <option value="group">Группа (все пишут)</option>
+            <option value="channel">Канал (только ты)</option>
         </select>
         <button onclick="createG()">Создать</button>
     </div>
@@ -123,49 +129,48 @@
 <div id="set-mod" class="modal" onclick="clM('set-mod')">
     <div class="modal-c" onclick="event.stopPropagation()">
         <h3>Настройки</h3>
-        <input type="text" id="s-ni" placeholder="Ник">
+        <input type="text" id="s-ni" placeholder="Имя">
         <input type="text" id="s-us" placeholder="Username">
         <textarea id="s-bio" placeholder="О себе"></textarea>
         <input type="text" id="s-bg" placeholder="URL обоев чата">
-        <button onclick="theme()">Тема День/Ночь</button>
-        <button onclick="saveP()" style="margin-top:5px">Сохранить</button>
+        <button onclick="theme()">Сменить тему</button>
+        <button onclick="saveP()" style="margin-top:5px">Сохранить изменения</button>
         <button onclick="sb.auth.signOut().then(()=>location.reload())" style="background:#f44;margin-top:5px">Выйти</button>
     </div>
 </div>
 
 <script>
-const SB_URL = 'https://ljzhlookpjiphhtzpjzw.supabase.co';
-const SB_KEY = 'sb_publishable_2qdD5EqmWHelUvtAXiZsWA_5HEuphMS';
+const SB_URL = 'YOUR_URL';
+const SB_KEY = 'YOUR_KEY';
 const sb = supabase.createClient(SB_URL, SB_KEY);
-let me, activeChat, curFile;
+let me, activeChat, isR = false, curU;
 
-function toggleAuth(reg) {
-    document.getElementById('login-form').classList.toggle('hidden', reg);
-    document.getElementById('reg-form').classList.toggle('hidden', !reg);
+// AUTH
+function tglA() {
+    isR = !isR;
+    document.getElementById('r-fields').classList.toggle('hidden', !isR);
+    document.getElementById('a-btn').innerText = isR ? 'Создать аккаунт' : 'Войти';
+    document.getElementById('a-tgl').innerText = isR ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Создать';
 }
 
-async function register() {
-    const e = document.getElementById('r-email').value, p = document.getElementById('r-pass').value;
-    const n = document.getElementById('r-nick').value, u = document.getElementById('r-user').value;
-    const b = document.getElementById('r-bio').value;
+async function handleAuth() {
+    const user = document.getElementById('a-user').value, pass = document.getElementById('a-pass').value;
+    const nick = document.getElementById('a-name').value, bio = document.getElementById('a-bio').value;
+    const email = `${user}@tveeky.me`;
 
-    const { data, error } = await sb.auth.signUp({ email: e, password: p });
-    if(error) return alert(error.message);
-
-    const { error: pErr } = await sb.from('profiles').insert({ id: data.user.id, username: u, full_name: n, bio: b });
-    if(pErr) return alert("Username занят или ошибка БД");
-    
-    alert("Успешно! Теперь войдите.");
-    location.reload();
+    if(isR) {
+        const { data, error } = await sb.auth.signUp({ email, password: pass });
+        if(error) return alert(error.message);
+        await sb.from('profiles').insert({ id: data.user.id, username: user, full_name: nick, bio: bio });
+        alert("Готово! Войдите."); location.reload();
+    } else {
+        const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+        if(error) return alert("Неверный логин или пароль!");
+        location.reload();
+    }
 }
 
-async function login() {
-    const e = document.getElementById('email').value, p = document.getElementById('pass').value;
-    const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
-    if(error) return alert("Ошибка входа!");
-    location.reload();
-}
-
+// APP LOGIC
 async function start() {
     const { data: { session } } = await sb.auth.getSession();
     if(!session) return; me = session.user;
@@ -180,32 +185,42 @@ async function start() {
         if(p.chat_wallpaper) document.getElementById('chat-bg').style.backgroundImage = `url(${p.chat_wallpaper})`;
     }
     
-    loadC();
-    sb.channel('m').on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},pl=>{
-        if(activeChat && pl.new.chat_id===activeChat.id) renderM(pl.new);
+    loadChats();
+    sb.channel('m').on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},pl => {
+        if(activeChat && pl.new.chat_id === activeChat.id) renderM(pl.new);
     }).subscribe();
 }
 
-async function loadC() {
-    const { data } = await sb.from('chats').select('*').order('created_at',{ascending:false});
+async function loadChats() {
+    const { data } = await sb.from('chats').select('*').order('created_at', {ascending: false});
+    renderChatList(data);
+}
+
+function renderChatList(list) {
     const l = document.getElementById('chats'); l.innerHTML = '';
-    data?.forEach(c => {
+    list?.forEach(c => {
         const d = document.createElement('div'); d.className = 'chat-item';
-        d.innerHTML = `<img src="https://ui-avatars.com/api/?name=${c.name}&background=random"><b>${c.name}</b>`;
-        d.onclick = () => {
-            activeChat = c; document.getElementById('h-ui').classList.remove('hidden');
-            document.getElementById('input-ui').classList.remove('hidden');
-            document.getElementById('h-name').innerText = c.name;
-            document.getElementById('h-img').src = `https://ui-avatars.com/api/?name=${c.name}&background=random`;
-            loadM();
-        };
+        d.innerHTML = `<img src="https://ui-avatars.com/api/?name=${c.name}&background=random">
+            <div class="chat-info"><b>${c.name}</b><span style="font-size:12px; opacity:0.6">${c.type}</span></div>`;
+        d.onclick = () => openChat(c);
         l.appendChild(d);
     });
 }
 
-async function loadM() {
+function openChat(c) {
+    activeChat = c;
+    document.getElementById('h-ui').classList.remove('hidden');
+    document.getElementById('input-ui').classList.remove('hidden');
+    document.getElementById('h-name').innerText = c.name;
+    document.getElementById('h-stat').innerText = c.type === 'channel' ? 'подписчики' : 'участники';
+    document.getElementById('h-img').src = `https://ui-avatars.com/api/?name=${c.name}&background=random`;
+    loadMsgs();
+}
+
+async function loadMsgs() {
     const { data } = await sb.from('messages').select('*').eq('chat_id', activeChat.id).order('created_at');
-    document.getElementById('msgs').innerHTML = ''; data?.forEach(renderM);
+    document.getElementById('msgs').innerHTML = '';
+    data?.forEach(renderM);
 }
 
 function renderM(m) {
@@ -217,7 +232,7 @@ function renderM(m) {
         else h += `<video src="${m.media_url}" onclick="vw('${m.media_url}','v')"></video>`;
     }
     if(m.content) h += `<div>${m.content}</div>`;
-    h += `<div class="msg-time">${new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} ✓✓</div>`;
+    h += `<div class="msg-t">${new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} ✓✓</div>`;
     d.innerHTML = h; const b = document.getElementById('msgs'); b.appendChild(d); b.scrollTop = b.scrollHeight;
 }
 
@@ -227,36 +242,46 @@ async function send() {
     i.value = '';
 }
 
-async function upMedia(el) {
-    const f = el.files[0], p = `m/${Date.now()}_${f.name}`;
-    await sb.storage.from('tveeky-media').upload(p, f);
-    const { data } = sb.storage.from('tveeky-media').getPublicUrl(p);
-    await sb.from('messages').insert({ chat_id:activeChat.id, user_id:me.id, media_url:data.publicUrl, media_type:f.type.includes('image')?'image':'video'});
+async function up(el) {
+    const f = el.files[0], path = `m/${Date.now()}_${f.name}`;
+    await sb.storage.from('tveeky-media').upload(path, f);
+    const { data } = sb.storage.from('tveeky-media').getPublicUrl(path);
+    await sb.from('messages').insert({ chat_id: activeChat.id, user_id: me.id, media_url: data.publicUrl, media_type: f.type.includes('image')?'image':'video'});
 }
 
 function vw(u, t) {
-    curFile = u; const c = document.getElementById('v-content');
-    c.innerHTML = t==='i'?`<img src="${u}">`:`<video src="${u}" controls autoplay></video>`;
+    curU = u; const c = document.getElementById('v-content');
+    c.innerHTML = t === 'i' ? `<img src="${u}">` : `<video src="${u}" controls autoplay></video>`;
     document.getElementById('viewer').style.display = 'flex';
 }
 
-function saveMedia(e) { e.stopPropagation(); window.open(curFile, '_blank'); }
+function saveM(e) { e.stopPropagation(); window.open(curU, '_blank'); }
 
-function theme() {
-    document.body.toggleAttribute('data-theme');
-    localStorage.setItem('theme', document.body.hasAttribute('data-theme') ? 'dark' : 'light');
-}
-
-async function saveP() {
-    const n = document.getElementById('s-ni').value, u = document.getElementById('s-us').value, b = document.getElementById('s-bio').value, w = document.getElementById('s-bg').value;
-    const { error } = await sb.from('profiles').update({ full_name: n, username: u, bio: b, chat_wallpaper: w }).eq('id', me.id);
-    if(error) alert("Username занят!"); else location.reload();
+async function searchChats(v) {
+    const { data } = await sb.from('chats').select('*').ilike('name', `%${v}%`);
+    renderChatList(data);
 }
 
 async function createG() {
     const n = document.getElementById('g-na').value, t = document.getElementById('g-ty').value;
     await sb.from('chats').insert({ name: n, type: t, owner_id: me.id });
-    clM('add-mod'); loadC();
+    clM('add-mod'); loadChats();
+}
+
+async function saveP() {
+    const u = document.getElementById('s-us').value;
+    const { error } = await sb.from('profiles').update({ 
+        full_name: document.getElementById('s-ni').value, 
+        username: u, 
+        bio: document.getElementById('s-bio').value,
+        chat_wallpaper: document.getElementById('s-bg').value 
+    }).eq('id', me.id);
+    if(error) alert("Username уже занят!"); else location.reload();
+}
+
+function theme() {
+    document.body.toggleAttribute('data-theme');
+    localStorage.setItem('theme', document.body.hasAttribute('data-theme')?'dark':'light');
 }
 
 function opM(id) { document.getElementById(id).style.display = 'flex'; }
