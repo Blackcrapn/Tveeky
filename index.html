@@ -3,327 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tveeky Messenger</title>
+    <title>Tveeky</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        :root {
-            --tg-blue: #3390ec;
-            --tg-bg: #f4f4f5;
-            --msg-out: #eeffde;
-            --msg-in: #ffffff;
-            --text-main: #000000;
-        }
+        :root { --tg-blue: #3390ec; --tg-bg: #f4f4f5; --msg-in: #ffffff; --msg-out: #eeffde; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, blinkmacsystemfont, "Segoe UI", roboto, sans-serif; overflow: hidden; }
+        .hidden { display: none !important; }
 
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+        /* Auth Screen */
+        #auth-screen { height: 100vh; display: flex; justify-content: center; align-items: center; background: #fff; z-index: 1000; position: relative; }
+        .auth-box { width: 340px; text-align: center; padding: 30px; border-radius: 20px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); }
+        .auth-box h1 { color: var(--tg-blue); font-size: 35px; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; outline: none; font-size: 16px; }
+        button { width: 100%; padding: 14px; background: var(--tg-blue); color: #fff; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        button:hover { opacity: 0.9; }
 
-        /* Экраны */
-        .screen { display: none; height: 100vh; width: 100vw; }
-        .screen.active { display: flex; }
-
-        /* Авторизация */
-        #auth-screen { background: var(--tg-bg); justify-content: center; align-items: center; }
-        .auth-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 320px; text-align: center; }
-        .auth-card h1 { color: var(--tg-blue); margin-bottom: 20px; }
-        input[type="text"], input[type="email"], input[type="password"] { 
-            width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; 
-        }
-        button { 
-            width: 100%; padding: 12px; background: var(--tg-blue); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px;
-        }
-
-        /* Главный интерфейс */
-        .main-container { display: flex; width: 100%; height: 100%; }
-        
-        /* Боковая панель */
-        .sidebar { width: 350px; border-right: 1px solid #dfe1e5; display: flex; flex-direction: column; background: white; }
-        .sidebar-header { padding: 15px; background: white; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f0; }
-        .my-profile { display: flex; align-items: center; cursor: pointer; }
-        .my-profile img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover; }
+        /* Main App */
+        #app { display: flex; height: 100vh; width: 100vw; }
+        .sidebar { width: 350px; background: #fff; border-right: 1px solid #dfe1e5; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f0; }
         
         .chat-list { flex: 1; overflow-y: auto; }
         .chat-item { padding: 12px 15px; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
         .chat-item:hover { background: #f4f4f5; }
-        .chat-item.active { background: var(--tg-blue); color: white; }
-        .chat-item img { width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; }
+        .chat-item img { width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; object-fit: cover; }
+        .chat-item-info { flex: 1; }
+        .chat-item-info b { font-size: 16px; }
+        .chat-item-info p { margin: 0; font-size: 13px; color: #888; }
 
-        /* Окно чата */
-        .chat-window { flex: 1; display: flex; flex-direction: column; background: #e6ebee; position: relative; }
-        .chat-header { padding: 10px 20px; background: white; display: flex; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        /* Chat Area */
+        .chat-area { flex: 1; display: flex; flex-direction: column; background-color: #e6ebee; background-size: cover; position: relative; }
+        .chat-header { padding: 10px 20px; background: #fff; display: flex; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); z-index: 10; }
         .chat-header img { width: 40px; height: 40px; border-radius: 50%; margin-right: 15px; }
-        
-        .messages-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .msg { max-width: 70%; padding: 8px 12px; border-radius: 12px; position: relative; font-size: 15px; line-height: 1.4; }
-        .msg.sent { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 2px; }
-        .msg.received { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 2px; }
-        .msg img, .msg video { max-width: 100%; border-radius: 8px; margin-top: 5px; cursor: pointer; }
-        
-        .msg-info { display: flex; justify-content: flex-end; align-items: center; font-size: 11px; color: #687a86; margin-top: 4px; }
-        .tick { margin-left: 4px; color: var(--tg-blue); }
 
-        .input-bar { padding: 15px; background: white; display: flex; align-items: center; gap: 10px; }
-        .input-bar input { flex: 1; border: none; padding: 10px; font-size: 16px; outline: none; }
+        .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { max-width: 70%; padding: 8px 12px; border-radius: 15px; font-size: 15px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg.my { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 2px; }
+        .msg.other { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 2px; }
+        .msg-media { width: 100%; border-radius: 10px; cursor: pointer; margin-bottom: 5px; }
+        .msg-time { font-size: 11px; color: #687a86; text-align: right; margin-top: 4px; display: flex; justify-content: flex-end; align-items: center; }
+        .msg-time .material-icons { font-size: 14px; margin-left: 4px; color: var(--tg-blue); }
 
-        /* Модальные окна */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 350px; position: relative; }
-        
-        /* Просмотр медиа */
-        .viewer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
-        .viewer img, .viewer video { max-width: 90%; max-height: 80%; }
-        .viewer-tools { position: absolute; top: 20px; right: 20px; display: flex; gap: 20px; color: white; }
-        .viewer-tools i { cursor: pointer; font-size: 30px; }
+        .input-bar { padding: 15px; background: #fff; display: flex; align-items: center; gap: 12px; }
+        .input-bar input { flex: 1; border: none; padding: 10px; font-size: 16px; margin: 0; background: #f1f1f1; border-radius: 20px; }
+
+        /* Fullscreen Viewer */
+        #viewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        .v-top { position: absolute; top: 20px; right: 20px; display: flex; gap: 25px; color: #fff; }
+        .v-top i { cursor: pointer; font-size: 30px; }
+        #v-content img, #v-content video { max-width: 90vw; max-height: 85vh; border-radius: 5px; }
+
+        /* Modals */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1500; display: none; justify-content: center; align-items: center; }
+        .modal-c { background: #fff; padding: 25px; border-radius: 20px; width: 350px; }
     </style>
 </head>
 <body>
 
-    <div id="screen-auth" class="screen active">
-        <div class="auth-card">
-            <h1 id="auth-title">Tveeky</h1>
-            <div id="reg-inputs" style="display: none;">
-                <input type="text" id="reg-nickname" placeholder="Ник (для людей)">
-                <input type="text" id="reg-username" placeholder="Уникальный @username">
+<div id="auth-screen">
+    <div class="auth-box">
+        <h1>Tveeky</h1>
+        <p id="auth-hint">Введите почту для входа</p>
+        <div id="auth-step-1">
+            <input type="email" id="email" placeholder="Email (example@mail.com)">
+            <button onclick="sendOTP()">Далее</button>
+        </div>
+        <div id="auth-step-2" class="hidden">
+            <input type="text" id="otp" placeholder="Код из письма">
+            <div id="reg-info" class="hidden">
+                <input type="text" id="nick" placeholder="Имя профиля">
+                <input type="text" id="user_at" placeholder="Username (уникальный)">
             </div>
-            <input type="email" id="auth-email" placeholder="Email">
-            <input type="password" id="auth-pass" placeholder="Пароль">
-            <button onclick="handleAuth()" id="btn-auth">Войти</button>
-            <p style="cursor:pointer; color: var(--tg-blue); font-size: 14px;" onclick="toggleAuth()">Создать аккаунт</p>
+            <button onclick="verifyOTP()">Войти</button>
         </div>
     </div>
+</div>
 
-    <div id="screen-main" class="screen">
-        <div class="main-container">
-            <div class="sidebar">
-                <div class="sidebar-header">
-                    <div class="my-profile" onclick="showSettings()">
-                        <img id="my-ava" src="https://via.placeholder.com/40">
-                        <span id="my-name">Загрузка...</span>
-                    </div>
-                    <i class="material-icons" style="cursor:pointer" onclick="showCreateChat()">add_comment</i>
-                </div>
-                <div class="chat-list" id="chat-list"></div>
-            </div>
-
-            <div class="chat-window">
-                <div id="chat-header" class="chat-header" style="visibility: hidden;">
-                    <img id="chat-icon" src="">
-                    <div>
-                        <div id="chat-title" style="font-weight: bold;">Чат</div>
-                        <div style="font-size: 12px; color: #888;">online</div>
-                    </div>
-                </div>
-                
-                <div class="messages-area" id="msg-container">
-                    <div style="margin: auto; color: #888;">Выберите чат, чтобы начать</div>
-                </div>
-
-                <div class="input-bar" id="input-bar" style="display: none;">
-                    <label for="file-up"><i class="material-icons" style="cursor:pointer; color: #888;">attach_file</i></label>
-                    <input type="file" id="file-up" hidden onchange="uploadMedia(this)">
-                    <input type="text" id="msg-input" placeholder="Сообщение...">
-                    <i class="material-icons" style="color: var(--tg-blue); cursor:pointer;" onclick="sendText()">send</i>
-                </div>
+<div id="app" class="hidden">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="material-icons" onclick="showMod('set-mod')" style="cursor:pointer">menu</i>
+            <b>Чаты</b>
+            <i class="material-icons" onclick="showMod('add-mod')" style="cursor:pointer">add_circle_outline</i>
+        </div>
+        <div class="chat-list" id="chat-list"></div>
+    </div>
+    
+    <div class="chat-area" id="chat-bg">
+        <div id="active-chat-h" class="chat-header hidden">
+            <img id="active-img" src="https://ui-avatars.com/api/?name=T">
+            <div>
+                <b id="active-name">Чат</b><br>
+                <small style="color:#888" id="active-status">online</small>
             </div>
         </div>
-    </div>
-
-    <div id="modal-settings" class="modal">
-        <div class="modal-content">
-            <h3>Настройки профиля</h3>
-            <label>Ник:</label>
-            <input type="text" id="set-nick">
-            <label>Username:</label>
-            <input type="text" id="set-user">
-            <label>Обои чата (URL):</label>
-            <input type="text" id="set-bg" placeholder="url картинки">
-            <button onclick="saveSettings()">Сохранить</button>
-            <button style="background:#ff4d4d" onclick="supabase.auth.signOut().then(()=>location.reload())">Выйти</button>
-            <button style="background:#ccc" onclick="closeModals()">Закрыть</button>
-        </div>
-    </div>
-
-    <div id="viewer" class="viewer" onclick="this.style.display='none'">
-        <div class="viewer-tools">
-            <i class="material-icons" onclick="downloadFile(event)">file_download</i>
-            <i class="material-icons">close</i>
-        </div>
-        <div id="viewer-content"></div>
-    </div>
-
-    <script>
-        // --- КОНФИГ SUPABASE ---
-        const SB_URL = 'https://uoypzlsxgzsjvhulzdpk.supabase.co';
-        const SB_KEY = 'sb_publishable_yAAytU3jrrpSmOuG6-p2nA_AHnpfnFx';
-        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
-
-        let user = null;
-        let activeChat = null;
-        let isReg = false;
-        let currentViewUrl = '';
-
-        // --- ЛОГИКА ВХОДА ---
-        function toggleAuth() {
-            isReg = !isReg;
-            document.getElementById('reg-inputs').style.display = isReg ? 'block' : 'none';
-            document.getElementById('auth-title').innerText = isReg ? 'Регистрация' : 'Tveeky';
-            document.getElementById('btn-auth').innerText = isReg ? 'Создать' : 'Войти';
-        }
-
-        async function handleAuth() {
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-pass').value;
-
-            if (isReg) {
-                const nick = document.getElementById('reg-nickname').value;
-                const user_at = document.getElementById('reg-username').value;
-
-                // Проверка уникальности
-                const { data: check } = await supabase.from('profiles').select('username').eq('username', user_at).single();
-                if (check) return alert('Username уже занят!');
-
-                const { data, error } = await supabase.auth.signUp({ email, password: pass });
-                if (error) return alert(error.message);
-                
-                await supabase.from('profiles').insert({ id: data.user.id, full_name: nick, username: user_at });
-                alert('Готово! Теперь войдите.');
-                toggleAuth();
-            } else {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-                if (error) return alert('Ошибка входа');
-                initApp();
-            }
-        }
-
-        async function initApp() {
-            const { data } = await supabase.auth.getSession();
-            if (!data.session) return;
-            user = data.session.user;
-
-            document.getElementById('screen-auth').classList.remove('active');
-            document.getElementById('screen-main').classList.add('active');
-
-            loadMyProfile();
-            loadChats();
-            subscribeToMessages();
-        }
-
-        async function loadMyProfile() {
-            const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            document.getElementById('my-name').innerText = data.full_name;
-            document.getElementById('set-nick').value = data.full_name;
-            document.getElementById('set-user').value = data.username;
-        }
-
-        // --- ЧАТЫ ---
-        async function loadChats() {
-            const { data: chats } = await supabase.from('chats').select('*');
-            const list = document.getElementById('chat-list');
-            list.innerHTML = '';
-            chats.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'chat-item';
-                div.innerHTML = `<img src="https://via.placeholder.com/50"> <span>${c.name}</span>`;
-                div.onclick = () => selectChat(c);
-                list.appendChild(div);
-            });
-        }
-
-        function selectChat(chat) {
-            activeChat = chat;
-            document.getElementById('chat-header').style.visibility = 'visible';
-            document.getElementById('input-bar').style.display = 'flex';
-            document.getElementById('chat-title').innerText = chat.name;
-            loadMessages(chat.id);
-        }
-
-        async function loadMessages(chatId) {
-            const { data } = await supabase.from('messages').select('*').eq('chat_id', chatId).order('created_at', {ascending: true});
-            const container = document.getElementById('msg-container');
-            container.innerHTML = '';
-            data.forEach(m => renderMsg(m));
-        }
-
-        function renderMsg(m) {
-            const container = document.getElementById('msg-container');
-            const isSent = m.user_id === user.id;
-            const div = document.createElement('div');
-            div.className = `msg ${isSent ? 'sent' : 'received'}`;
-            
-            let html = '';
-            if (m.media_type === 'image') html += `<img src="${m.media_url}" onclick="openViewer('${m.media_url}', 'img')">`;
-            if (m.media_type === 'video') html += `<video src="${m.media_url}" onclick="openViewer('${m.media_url}', 'vid')"></video>`;
-            if (m.content) html += `<div>${m.content}</div>`;
-            
-            html += `<div class="msg-info">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} <span class="tick">✓✓</span></div>`;
-            
-            div.innerHTML = html;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        // --- ФУНКЦИИ ---
-        async function sendText() {
-            const val = document.getElementById('msg-input').value;
-            if (!val || !activeChat) return;
-            await supabase.from('messages').insert({ chat_id: activeChat.id, user_id: user.id, content: val });
-            document.getElementById('msg-input').value = '';
-        }
-
-        async function uploadMedia(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const ext = file.name.split('.').pop();
-            const path = `${Date.now()}.${ext}`;
-            
-            await supabase.storage.from('tveeky-media').upload(path, file);
-            const { data } = supabase.storage.from('tveeky-media').getPublicUrl(path);
-            
-            await supabase.from('messages').insert({
-                chat_id: activeChat.id,
-                user_id: user.id,
-                media_url: data.publicUrl,
-                media_type: file.type.startsWith('image') ? 'image' : 'video'
-            });
-        }
-
-        function openViewer(url, type) {
-            currentViewUrl = url;
-            const v = document.getElementById('viewer');
-            const c = document.getElementById('viewer-content');
-            c.innerHTML = type === 'img' ? `<img src="${url}">` : `<video src="${url}" controls autoplay></video>`;
-            v.style.display = 'flex';
-        }
-
-        function downloadFile(e) {
-            e.stopPropagation();
-            window.open(currentViewUrl, '_blank');
-        }
-
-        function subscribeToMessages() {
-            supabase.channel('messages').on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, payload => {
-                if (activeChat && payload.new.chat_id === activeChat.id) renderMsg(payload.new);
-            }).subscribe();
-        }
-
-        // Настройки
-        function showSettings() { document.getElementById('modal-settings').style.display='flex'; }
-        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
         
-        async function saveSettings() {
-            const nick = document.getElementById('set-nick').value;
-            const user_at = document.getElementById('set-user').value;
-            const bg = document.getElementById('set-bg').value;
+        <div class="messages" id="msgs">
+            <div style="margin:auto; color:#888;">Выберите чат для общения</div>
+        </div>
 
-            const { error } = await supabase.from('profiles').update({ full_name: nick, username: user_at }).eq('id', user.id);
-            if (error) return alert('Username занят!');
-            
-            if (bg) document.querySelector('.chat-window').style.backgroundImage = `url(${bg})`;
-            alert('Сохранено!');
-            closeModals();
-            loadMyProfile();
-        }
+        <div class="input-bar hidden" id="input-ui">
+            <label for="media-up"><i class="material-icons" style="color:#777; cursor:pointer">attach_file</i></label>
+            <input type="file" id="media-up" hidden onchange="uploadFile(this)">
+            <input type="text" id="m-text" placeholder="Сообщение...">
+            <i class="material-icons" onclick="send()" style="color:var(--tg-blue); cursor:pointer">send</i>
+        </div>
+    </div>
+</div>
 
-        window.onload = initApp;
-    </script>
+<div id="viewer" onclick="this.style.display='none'">
+    <div class="v-top">
+        <i class="material-icons" onclick="downloadCur(event)">download</i>
+        <i class="material-icons">close</i>
+    </div>
+    <div id="v-content"></div>
+</div>
+
+<div id="add-mod" class="modal" onclick="closeMod('add-mod')">
+    <div class="modal-c" onclick="event.stopPropagation()">
+        <h3>Создать</h3>
+        <input type="text" id="new-g-name" placeholder="Название">
+        <select id="new-g-type">
+            <option value="group">Группа</option>
+            <option value="channel">Канал</option>
+        </select>
+        <button onclick="createG()">Создать</button>
+    </div>
+</div>
+
+<div id="set-mod" class="modal" onclick="closeMod('set-mod')">
+    <div class="modal-c" onclick="event.stopPropagation()">
+        <h3>Настройки</h3>
+        <input type="text" id="s-nick" placeholder="Имя">
+        <input type="text" id="s-user" placeholder="Username">
+        <input type="text" id="s-wallpaper" placeholder="URL обоев чата">
+        <button onclick="saveProfile()">Сохранить</button>
+        <button style="background:#ff4d4d; margin-top:10px;" onclick="sb.auth.signOut().then(()=>location.reload())">Выйти</button>
+    </div>
+</div>
+
+<script>
+const SB_URL = 'YOUR_SUPABASE_URL';
+const SB_KEY = 'YOUR_SUPABASE_KEY';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+let me = null;
+let activeChat = null;
+let curMediaUrl = '';
+
+// --- AUTH ---
+async function sendOTP() {
+    const email = document.getElementById('email').value;
+    const { error } = await sb.auth.signInWithOtp({ email });
+    if(error) return alert(error.message);
+    document.getElementById('auth-step-1').classList.add('hidden');
+    document.getElementById('auth-step-2').classList.remove('hidden');
+    document.getElementById('auth-hint').innerText = "Код отправлен на почту";
+    document.getElementById('reg-info').classList.remove('hidden');
+}
+
+async function verifyOTP() {
+    const email = document.getElementById('email').value;
+    const token = document.getElementById('otp').value;
+    const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'magiclink' });
+    if(error) return alert("Код неверный!");
+    
+    me = data.user;
+    const { data: p } = await sb.from('profiles').select('*').eq('id', me.id).single();
+    if(!p) {
+        const u = document.getElementById('user_at').value;
+        const n = document.getElementById('nick').value;
+        const { error: regErr } = await sb.from('profiles').insert({ id: me.id, username: u, full_name: n });
+        if(regErr) return alert("Username уже занят!");
+    }
+    init();
+}
+
+async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session) return;
+    me = session.user;
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+
+    const { data: p } = await sb.from('profiles').select('*').eq('id', me.id).single();
+    document.getElementById('s-nick').value = p.full_name;
+    document.getElementById('s-user').value = p.username;
+    if(p.chat_wallpaper) document.getElementById('chat-bg').style.backgroundImage = `url(${p.chat_wallpaper})`;
+
+    loadChats();
+    sb.channel('msgs').on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, pl => {
+        if(activeChat && pl.new.chat_id === activeChat.id) renderMsg(pl.new);
+    }).subscribe();
+}
+
+// --- LOGIC ---
+async function loadChats() {
+    const { data } = await sb.from('chats').select('*').order('created_at', {ascending: false});
+    const list = document.getElementById('chat-list');
+    list.innerHTML = '';
+    data.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'chat-item';
+        item.innerHTML = `<img src="https://ui-avatars.com/api/?name=${c.name}">
+            <div class="chat-item-info"><b>${c.name}</b><p>${c.type}</p></div>`;
+        item.onclick = () => openChat(c);
+        list.appendChild(item);
+    });
+}
+
+function openChat(chat) {
+    activeChat = chat;
+    document.getElementById('active-chat-h').classList.remove('hidden');
+    document.getElementById('input-ui').classList.remove('hidden');
+    document.getElementById('active-name').innerText = chat.name;
+    document.getElementById('active-img').src = `https://ui-avatars.com/api/?name=${chat.name}`;
+    loadMessages();
+}
+
+async function loadMessages() {
+    const { data } = await sb.from('messages').select('*').eq('chat_id', activeChat.id).order('created_at');
+    document.getElementById('msgs').innerHTML = '';
+    data.forEach(renderMsg);
+}
+
+function renderMsg(m) {
+    const isMe = m.user_id === me.id;
+    const d = document.createElement('div');
+    d.className = `msg ${isMe ? 'my' : 'other'}`;
+    let body = '';
+    if(m.media_url) {
+        if(m.media_type === 'image') body += `<img src="${m.media_url}" class="msg-media" onclick="view('${m.media_url}', 'img')">`;
+        else body += `<video src="${m.media_url}" class="msg-media" onclick="view('${m.media_url}', 'vid')"></video>`;
+    }
+    if(m.content) body += `<div>${m.content}</div>`;
+    body += `<div class="msg-time">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} <i class="material-icons">done_all</i></div>`;
+    d.innerHTML = body;
+    const box = document.getElementById('msgs');
+    box.appendChild(d);
+    box.scrollTop = box.scrollHeight;
+}
+
+async function send() {
+    const txt = document.getElementById('m-text').value;
+    if(!txt || !activeChat) return;
+    await sb.from('messages').insert({ chat_id: activeChat.id, user_id: me.id, content: txt });
+    document.getElementById('m-text').value = '';
+}
+
+async function uploadFile(input) {
+    const file = input.files[0];
+    const path = `${Date.now()}_${file.name}`;
+    await sb.storage.from('tveeky-media').upload(path, file);
+    const { data } = sb.storage.from('tveeky-media').getPublicUrl(path);
+    await sb.from('messages').insert({ chat_id: activeChat.id, user_id: me.id, media_url: data.publicUrl, media_type: file.type.includes('image') ? 'image' : 'video' });
+}
+
+function view(u, t) {
+    curMediaUrl = u;
+    const v = document.getElementById('viewer');
+    document.getElementById('v-content').innerHTML = t === 'img' ? `<img src="${u}">` : `<video src="${u}" controls autoplay></video>`;
+    v.style.display = 'flex';
+}
+
+function downloadCur(e) { e.stopPropagation(); window.open(curMediaUrl, '_blank'); }
+
+async function createG() {
+    const name = document.getElementById('new-g-name').value;
+    const type = document.getElementById('new-g-type').value;
+    await sb.from('chats').insert({ name, type, owner_id: me.id });
+    closeMod('add-mod'); loadChats();
+}
+
+async function saveProfile() {
+    const n = document.getElementById('s-nick').value;
+    const u = document.getElementById('s-user').value;
+    const w = document.getElementById('s-wallpaper').value;
+    const { error } = await sb.from('profiles').update({ full_name: n, username: u, chat_wallpaper: w }).eq('id', me.id);
+    if(error) alert("Username занят!"); else location.reload();
+}
+
+function showMod(id) { document.getElementById(id).style.display = 'flex'; }
+function closeMod(id) { document.getElementById(id).style.display = 'none'; }
+
+window.onload = init;
+</script>
 </body>
 </html>
